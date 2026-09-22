@@ -1,9 +1,9 @@
 #include <iostream>
-#include "../src/black_scholes.cpp"
+#include "pricing/black_scholes.hpp"
 
 int main(int argc, char const *argv[])
 {
-    EuropeanOption myOption = EuropeanOption{100, 1.0, OptionType::Call} ;
+    EuropeanOption myOption = EuropeanOption{100, 1.0, OptionType::Put} ;
 
     MarketData myMarket = MarketData{100, 0.2, 0.05};
 
