@@ -52,3 +52,11 @@ TEST_CASE("Deep in/out of the money") {
     MarketData deepOTM{50, 0.2, 0.05};
     REQUIRE(pricing::price(call, deepOTM).price == Catch::Approx(0.0).margin(0.5));
 }
+
+TEST_CASE("Zero maturity at the money is not nan") {
+    MarketData market{100, 0.2, 0.05};
+    EuropeanOption call{100, 0.0, OptionType::Call};   // S == K, T == 0
+    double p = pricing::price(call, market).price;
+    REQUIRE(!std::isnan(p));                            // <-- échoue sans court-circuit
+    REQUIRE(p == Catch::Approx(0.0).margin(1e-9));
+}

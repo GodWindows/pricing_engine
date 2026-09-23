@@ -45,18 +45,21 @@ namespace pricing
             {
                 price = std::max(option.K*discount - market.S, 0.00);
             } 
+        }else
+        {
+            double vol_sqrt_T = market.sigma * std::sqrt(option.T);
+            double d1 = (std::log(market.S / option.K) + ((market.r + ((market.sigma * market.sigma) / 2))* option.T))/ vol_sqrt_T;
+            double d2 = d1 - vol_sqrt_T;
+            if(option.type == OptionType::Call){
+                price = market.S * normal_cdf(d1) - option.K * discount * normal_cdf(d2);
+            }
+            else{
+                price = option.K * discount * normal_cdf(-d2) - market.S * normal_cdf(-d1);
+            }
         }
         
         
-        double vol_sqrt_T = market.sigma * std::sqrt(option.T);
-        double d1 = (std::log(market.S / option.K) + ((market.r + ((market.sigma * market.sigma) / 2))* option.T))/ vol_sqrt_T;
-        double d2 = d1 - vol_sqrt_T;
-        if(option.type == OptionType::Call){
-            price = market.S * normal_cdf(d1) - option.K * discount * normal_cdf(d2);
-        }
-        else{
-            price = option.K * discount * normal_cdf(-d2) - market.S * normal_cdf(-d1);
-        }
+        
         PricingResult res = PricingResult{price, 0, 0, 0, 0, 0};
         return res;
     }
