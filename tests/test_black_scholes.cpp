@@ -57,6 +57,72 @@ TEST_CASE("Zero maturity at the money is not nan") {
     MarketData market{100, 0.2, 0.05};
     EuropeanOption call{100, 0.0, OptionType::Call};   // S == K, T == 0
     double p = pricing::price(call, market).price;
-    REQUIRE(!std::isnan(p));                            // <-- échoue sans court-circuit
+    REQUIRE(!std::isnan(p));                            // <-- I added to make sure my if-guards actually work
     REQUIRE(p == Catch::Approx(0.0).margin(1e-9));
 }
+
+TEST_CASE("Computed value of Delta") {
+    double spot = 100;
+    double h = (1e-4 )* spot; // slight variation of the spot
+    EuropeanOption call{100, 1.0, OptionType::Call};
+    double price_at_s_plus_h = pricing::price(call, {spot + h, 0.2, 0.05}).price;
+    double price_at_s_minus_h = pricing::price(call, {spot - h, 0.2, 0.05}).price;
+    double variation = ((price_at_s_plus_h - price_at_s_minus_h) / (2*h));
+    REQUIRE(pricing::price(call, {spot, 0.2, 0.05}).delta == Catch::Approx(variation).margin(1e-5));
+}
+
+
+
+TEST_CASE("Computed value of Gamma") {
+    double spot = 100;
+    double h = (1e-4 )* spot; // slight variation of the spot
+    EuropeanOption call{100, 1.0, OptionType::Call};
+    double price_at_s_plus_h = pricing::price(call, {spot + h, 0.2, 0.05}).price;
+    double price_at_s_minus_h = pricing::price(call, {spot - h, 0.2, 0.05}).price;
+    double price_at_s = pricing::price(call, {spot, 0.2, 0.05}).price;
+    double variation = (price_at_s_plus_h - (2*price_at_s) + price_at_s_minus_h) / (h*h);
+
+    REQUIRE(pricing::price(call, {spot, 0.2, 0.05}).gamma == Catch::Approx(variation).margin(1e-4));
+}
+
+
+
+TEST_CASE("Computed value of Vega") {
+    double sigma = 0.2;
+    double h = (1e-4 )* sigma; // slight variation of the volatility
+    EuropeanOption call{100, 1.0, OptionType::Call};
+    double price_at_sigma_plus_h = pricing::price(call, {100, sigma +h, 0.05}).price;
+    double price_at_sigma_minus_h = pricing::price(call, {100,sigma -h, 0.05}).price;
+    double variation = ((price_at_sigma_plus_h - price_at_sigma_minus_h) / (2*h));
+
+    REQUIRE(pricing::price(call, {100, sigma, 0.05}).vega == Catch::Approx(variation).margin(1e-4));
+}
+
+
+TEST_CASE("Computed value of Rho") {
+    double r = 0.05;
+    double h = 1e-4 * r; // slight variation of the interest rate
+    EuropeanOption call{100, 1.0, OptionType::Call};
+    double price_at_r_plus_h  = pricing::price(call, {100, 0.2, r + h}).price;
+    double price_at_r_minus_h = pricing::price(call, {100, 0.2, r - h}).price;
+    double variation = (price_at_r_plus_h - price_at_r_minus_h) / (2*h);
+
+    REQUIRE(pricing::price(call, {100, 0.2, r}).rho == Catch::Approx(variation).margin(1e-4));
+}
+
+
+TEST_CASE("Computed value of Theta") {
+    double maturity = 1.0;
+    double h = 1e-4 * maturity; // slight variation of the maturity
+    EuropeanOption call{100, maturity, OptionType::Call};
+    EuropeanOption call_plus{100, maturity + h, OptionType::Call};
+    EuropeanOption call_minus{100, maturity - h, OptionType::Call};
+
+    double price_at_T_plus_h  = pricing::price(call_plus,  {100, 0.2, 0.05}).price;
+    double price_at_T_minus_h = pricing::price(call_minus, {100, 0.2, 0.05}).price;
+    double variation = (price_at_T_plus_h - price_at_T_minus_h) / (2*h); // = ∂price/∂T
+
+    // I added a minus on variation beacause theta = amount cause by variation of t = amount cause by variation of -T 
+    REQUIRE(pricing::price(call, {100, 0.2, 0.05}).theta == Catch::Approx(-variation).margin(1e-4));
+}
+
