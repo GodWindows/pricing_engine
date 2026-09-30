@@ -30,3 +30,15 @@ target_link_libraries(unit_tests PRIVATE pricing Catch2::Catch2WithMain)
 enable_testing()
 include(Catch)
 catch_discover_tests(unit_tests)
+
+# to add Python bindings (pybind11) 
+include(FetchContent)
+FetchContent_Declare(
+    pybind11
+    GIT_REPOSITORY https://github.com/pybind/pybind11.git
+    GIT_TAG        v2.13.6
+)
+FetchContent_MakeAvailable(pybind11)
+
+pybind11_add_module(pricing_engine python/bindings.cpp src/black_scholes.cpp)
+target_include_directories(pricing_engine PRIVATE include)
