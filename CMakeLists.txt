@@ -4,8 +4,8 @@ project(pricing_engine LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)             
 set(CMAKE_CXX_STANDARD_REQUIRED ON)  
 
-#my library : the pricing code
-add_library(pricing src/black_scholes.cpp)
+#my libraries : the pricing code
+add_library(pricing src/black_scholes.cpp src/monte_carlo.cpp)
 
 target_include_directories(pricing PUBLIC include)
 
@@ -24,7 +24,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(Catch2)
 
-add_executable(unit_tests tests/test_black_scholes.cpp)
+add_executable(unit_tests tests/test_black_scholes.cpp tests/test_monte_carlo.cpp)
 target_link_libraries(unit_tests PRIVATE pricing Catch2::Catch2WithMain)
 
 enable_testing()

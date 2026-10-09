@@ -1,5 +1,6 @@
 #include <iostream>
 #include "pricing/black_scholes.hpp"
+#include "pricing/monte_carlo.hpp"
 
 int main(int argc, char const *argv[])
 {
@@ -9,7 +10,11 @@ int main(int argc, char const *argv[])
 
     pricing::PricingResult myPrice = pricing::price(myOption, myMarket);
 
-    std::cout<< "Le prix est  : "<< myPrice.price;
+    double myPrice_mc = pricing::price_mc(myOption, myMarket, 10000, 42);
+
+    std::cout<< "Le prix est  : "<< myPrice.price << std::endl;
+
+    std::cout<< "Le prix est  : "<< myPrice_mc;
 
     return 0;
 }

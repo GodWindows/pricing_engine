@@ -2,7 +2,8 @@
 
 European option pricing engine based on the Black-Scholes model.
 Written in modern C++17, with unit tests (Catch2) and Python bindings (pybind11).
-
+Includes a second pricing engine based on Monte Carlo simulation, cross-validated
+against the closed-form Black-Scholes prices.
 Computes the price of European calls and puts, together with the full set of
 first-order Greeks (delta, gamma, vega, theta, rho), all from closed-form formulas.
 
@@ -78,6 +79,14 @@ These are short-circuited at the top of `price()` to return the intrinsic
 to calendar time (time decay), so it is negative for standard options. The
 finite-difference test negates the derivative w.r.t. maturity T accordingly.
 
+**Both engines, share the same interface.** The Monte Carlo engine (`price_mc`) consumes the
+exact same `EuropeanOption` and `MarketData` structs as the closed-form engine.
+Simulation is done under the risk-neutral measure: S_T = S·exp((r − σ²/2)·T + σ·√T·Z),
+averaging the discounted payoff over N paths. This is the foundation for pricing
+path-dependent payoffs where no closed form exists. Constant terms (drift,
+diffusion, discount) are computed outside the simulation loop; the RNG is a
+seeded std::mt19937 so results are reproducible and tests are deterministic.
+
 ## Testing approach
 The engine is validated against several independent checks:
 - **Reference values** : two independent parameter sets, cross-checked by hand
@@ -87,10 +96,15 @@ The engine is validated against several independent checks:
 - **Greeks vs finite differences** — all five Greeks, for both call and put
 - **Greeks theoretical bounds** : delta ranges, gamma ≥ 0, vega ≥ 0
 - **Limit cases** : T = 0 and sigma = 0 return intrinsic payoff with no NaN
+- **Monte Carlo cross-validation** — MC price converges to Black-Scholes (call & put)
+- **Convergence property** — MC error decreases as the number of paths grows
 
 ## Model assumptions & limitations
 - Constant volatility and interest rate (no volatility smile, no rate curve)
 - No dividends
 - European exercise only (no early exercise)
 - Log-normal price dynamics (no jumps, continuous trading assumed)
+- The Monte Carlo engine currently prices the same European payoffs as the
+closed-form engine (used as a cross-check). It does not yet compute Greeks or
+handle path-dependent/exotic payoffs — natural next steps.
 
