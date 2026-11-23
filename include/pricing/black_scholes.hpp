@@ -1,3 +1,4 @@
+#pragma once
 #include "instrument.hpp"
 #include "market.hpp"
 

@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include <cmath>
+#include <stdexcept>
 
 TEST_CASE("Monte Carlo converges to Black-Scholes") {
     MarketData market{100, 0.2, 0.05};
@@ -34,4 +35,12 @@ TEST_CASE("Monte Carlo error decreases with more paths") {
     double err_large = std::abs(pricing::price_mc(call, market, 1000000, 42) - bs);
 
     REQUIRE(err_large < err_small);   // more paths → smaller error
+}
+
+TEST_CASE("Monte Carlo rejects a non-positive number of paths") {
+    MarketData market{100, 0.2, 0.05};
+    EuropeanOption call{100, 1.0, OptionType::Call};
+
+    REQUIRE_THROWS_AS(pricing::price_mc(call, market, 0), std::invalid_argument);
+    REQUIRE_THROWS_AS(pricing::price_mc(call, market, -10), std::invalid_argument);
 }

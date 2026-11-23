@@ -2,19 +2,16 @@
 #include "pricing/black_scholes.hpp"
 #include "pricing/monte_carlo.hpp"
 
-int main(int argc, char const *argv[])
+int main()
 {
-    EuropeanOption myOption = EuropeanOption{100, 1.0, OptionType::Put} ;
-
-    MarketData myMarket = MarketData{100, 0.2, 0.05};
+    EuropeanOption myOption{100, 1.0, OptionType::Put};
+    MarketData myMarket{100, 0.2, 0.05};
 
     pricing::PricingResult myPrice = pricing::price(myOption, myMarket);
+    double myPrice_mc = pricing::price_mc(myOption, myMarket, 100000, 42);
 
-    double myPrice_mc = pricing::price_mc(myOption, myMarket, 10000, 42);
-
-    std::cout<< "Le prix est  : "<< myPrice.price << std::endl;
-
-    std::cout<< "Le prix est  : "<< myPrice_mc;
+    std::cout << "Black-Scholes price: " << myPrice.price << '\n';
+    std::cout << "Monte Carlo price:   " << myPrice_mc << '\n';
 
     return 0;
 }
