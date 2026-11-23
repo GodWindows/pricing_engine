@@ -1,11 +1,12 @@
 #include <pybind11/pybind11.h>
 #include "pricing/black_scholes.hpp"
+#include "pricing/monte_carlo.hpp"
 
 namespace py = pybind11;
 using namespace pricing;
 
 PYBIND11_MODULE(pricing_engine, m) {
-    m.doc() = "European option pricing engine (Black-Scholes)";
+    m.doc() = "European option pricing engine (Black-Scholes and Monte Carlo)";
 
     py::enum_<OptionType>(m, "OptionType")
         .value("Call", OptionType::Call)
@@ -35,4 +36,10 @@ PYBIND11_MODULE(pricing_engine, m) {
 
     m.def("price", &price, py::arg("option"), py::arg("market"),
           "Price a European option and return price + Greeks");
+
+    // the simulation does not touch Python objects, so the GIL is released while it runs
+    m.def("price_mc", &price_mc, py::arg("option"), py::arg("market"),
+          py::arg("num_paths"), py::arg("seed") = 42,
+          py::call_guard<py::gil_scoped_release>(),
+          "Price a European option by Monte Carlo simulation (risk-neutral GBM)");
 }

@@ -9,6 +9,14 @@ add_library(pricing src/black_scholes.cpp src/monte_carlo.cpp)
 
 target_include_directories(pricing PUBLIC include)
 
+# strict warnings on the library code
+target_compile_options(pricing PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>)
+
+# needed so the same library can be linked into the Python module
+set_target_properties(pricing PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 add_executable(demo apps/main.cpp)
 
 # my demo right here
@@ -32,7 +40,6 @@ include(Catch)
 catch_discover_tests(unit_tests)
 
 # to add Python bindings (pybind11) 
-include(FetchContent)
 FetchContent_Declare(
     pybind11
     GIT_REPOSITORY https://github.com/pybind/pybind11.git
@@ -40,5 +47,5 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
-pybind11_add_module(pricing_engine python/bindings.cpp src/black_scholes.cpp)
-target_include_directories(pricing_engine PRIVATE include)
+pybind11_add_module(pricing_engine python/bindings.cpp)
+target_link_libraries(pricing_engine PRIVATE pricing)
