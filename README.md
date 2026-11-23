@@ -1,13 +1,15 @@
 # Options Pricing Engine (C++17 / Python)
 
+[![CI](https://github.com/GodWindows/pricing_engine/actions/workflows/ci.yml/badge.svg)](https://github.com/GodWindows/pricing_engine/actions/workflows/ci.yml)
+
 **A fast, rigorously validated options pricing library: C++17 at the core, with first-class Python access.**
 
 This engine gives you **two independent pricing engines** behind **one shared API**:
 
 - **Analytical Black-Scholes engine.** Exact closed-form prices for European calls and puts, plus the **full set of first-order Greeks** (Δ delta, Γ gamma, ν vega, Θ theta, ρ rho), all computed analytically in a single call.
 - **Monte Carlo engine.** Risk-neutral simulation under geometric Brownian motion, **cross-validated against the closed-form prices** and fully reproducible thanks to seeded RNG.
-- **Python bindings (pybind11).** The same C++ performance, available from Python in one `import`.
-- **19 test cases, all passing.** They cover reference values, put-call parity, no-arbitrage bounds, monotonicity, finite-difference Greek checks, edge cases and Monte Carlo convergence.
+- **Python bindings (pybind11).** Both engines, with the same C++ performance, available from Python in one `import`.
+- **20 test cases, all passing, run by CI on Linux and macOS.** They cover reference values, put-call parity, no-arbitrage bounds, monotonicity, finite-difference Greek checks, edge cases, Monte Carlo convergence and input validation.
 
 It's built the way production quant libraries are built: a clean product/market/model separation, a minimal API, numerical robustness on degenerate inputs, and a test suite grounded in financial theory, not just "does it run."
 
@@ -23,8 +25,9 @@ It's built the way production quant libraries are built: a clean product/market/
 | **Unified interface** | Both engines consume the *exact same* `EuropeanOption` and `MarketData` inputs |
 | **Robust by design** | T = 0 and σ = 0 are handled explicitly, so you never get NaN |
 | **Reproducible** | Seeded `std::mt19937` gives deterministic Monte Carlo results, run after run |
-| **Python ready** | pybind11 module plus a Jupyter demo notebook |
-| **Zero-hassle build** | CMake fetches Catch2 and pybind11 automatically |
+| **Python ready** | pybind11 module exposing both engines (GIL released during Monte Carlo), plus a Jupyter demo notebook |
+| **Zero-hassle build** | CMake fetches Catch2 and pybind11 automatically; warning-free under `-Wall -Wextra -Wpedantic` |
+| **Continuous integration** | GitHub Actions builds, runs the C++ tests and smoke-tests the Python module on every push |
 
 ---
 
@@ -42,7 +45,7 @@ cmake --build build
 ctest --test-dir build
 ```
 ```
-100% tests passed out of 19
+100% tests passed out of 20
 ```
 
 ## Usage (C++)
@@ -70,6 +73,8 @@ call = pe.EuropeanOption(100, 1.0, pe.OptionType.Call)
 market = pe.MarketData(100, 0.2, 0.05)
 res = pe.price(call, market)
 print(res.price, res.delta)   # price and Greeks
+
+mc_price = pe.price_mc(call, market, 100_000, seed=42)   # Monte Carlo, same inputs
 ```
 See `notebooks/demo.ipynb` for a worked example that plots price and delta against spot.
 
@@ -77,9 +82,10 @@ See `notebooks/demo.ipynb` for a worked example that plots price and delta again
 ```
 include/pricing/   public headers (API): instrument, market, black_scholes, monte_carlo
 src/               implementation (closed-form + Monte Carlo engines)
-tests/             unit tests (Catch2): 19 test cases
+tests/             unit tests (Catch2): 20 test cases
 apps/              demo executable
 python/            pybind11 bindings
+.github/workflows/ CI: build + tests on Linux and macOS
 notebooks/         Python demo (price & delta vs spot)
 ```
 
@@ -137,6 +143,7 @@ The engine is checked against financial theory, not just against itself:
 - **Limit cases:** T = 0 and σ = 0 return the intrinsic payoff, NaN-free
 - **Monte Carlo cross-validation:** the MC price converges to Black-Scholes (calls and puts)
 - **Convergence property:** the MC error shrinks as the number of paths grows
+- **Input validation:** the MC engine rejects a non-positive number of paths
 
 ---
 
@@ -150,6 +157,5 @@ The architecture is designed to grow. Natural next steps include:
 - Monte Carlo Greeks (pathwise / likelihood-ratio estimators)
 - Path-dependent and exotic payoffs (Asian, barrier, lookback) on the existing MC core
 - Dividend yield support
-- Exposing the Monte Carlo engine through the Python bindings
 - Variance reduction (antithetic variates, control variates)
 - American exercise (binomial trees / Longstaff-Schwartz)
